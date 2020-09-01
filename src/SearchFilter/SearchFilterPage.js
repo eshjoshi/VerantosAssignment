@@ -5,6 +5,11 @@ import Typography from '@material-ui/core/Typography';
 import MenuItem from '@material-ui/core/MenuItem';
 import Button from '@material-ui/core/Button';
 import Slider from '@material-ui/core/Slider';
+import moment from 'moment';
+import PropTypes from 'prop-types';
+import Select from '@material-ui/core/Select';
+import InputLabel from '@material-ui/core/InputLabel';
+
 
 
 const useStyles = makeStyles((theme) => ({
@@ -18,46 +23,85 @@ const useStyles = makeStyles((theme) => ({
 
 }));
 
-function valuetext(value) {
-    return `RS ${value}`;
-}
+
+
 function SearchFilterPage(props) {
-    const passengers = [{
-        value: '1',
+    const flightData = props;
+
+    const passengersValues = [{
+        value: "1",
         label: 'One',
     },
     {
-        value: '2',
+        value: "2",
         label: 'Two',
     },
     {
-        value: '3',
+        value:"3",
         label: 'Three',
-    }]
-
-    const [value, setValue] = useState([0, 100000]);
-
-    const handleChange = (event, newValue) => {
-        setValue(newValue);
-    };
-    const classes = useStyles();
-    const [selectedData, setSelectedData] = useState(props.flights);
-    console.log("flights",selectedData);
-
-    const [originCity, setOriginCity] = useState(""  )
-    const originCityChange = (event) => {
-        setOriginCity(event.target.value);
-        console.log(event.target.value)
-        const originCityData = selectedData.filter(value => value.source === event.target.value)
-        setSelectedData(originCityData);
+    },
+    {
+        value: "4",
+        label: 'Four',
     }
 
-    const [destinationCity, setDestinationCity] = useState("")
-    const destinationCityChange = (event) => {
-        setDestinationCity(event.target.value);
-        console.log(event.target.value)
-        const destinationCityData = selectedData.filter(value => value.destination === event.target.value)
-        setSelectedData(destinationCityData);
+    ];
+
+    const classes = useStyles();
+    const [despartureDate, setDespartureDate] = useState(null);
+    const onDepartureDateChnage = (event) => {
+        setDespartureDate(moment(event.target.value).format('LT'));
+    }
+
+
+    const [passengers, setPassengers] = useState("");
+    const onPassengersChange = (event) => {
+        console.log(event.target.value);
+        setPassengers(event.target.value);
+    }
+
+    const [selectedData, setSelectedData] = useState(flightData.flights);
+    const onClickSearch = (event) => {
+
+        console.log(selectedData);
+        let filterData;
+        if (flightData.destinationCity.toUpperCase() !== "" && flightData.originCity.toUpperCase() !== "" && despartureDate !== null && passengers !== "") {
+            filterData = selectedData.filter((value) => value.destination.toUpperCase() === flightData.destinationCity.toUpperCase()
+                && value.source.toUpperCase() === flightData.originCity.toUpperCase() && value.departs_at === despartureDate && value.passengers === passengers);
+        }
+        else if (flightData.destinationCity.toUpperCase() !== "" && flightData.originCity.toUpperCase() !== "") {
+            filterData = selectedData.filter((value) => value.destination.toUpperCase() === flightData.destinationCity.toUpperCase()
+                && value.source.toUpperCase() === flightData.originCity.toUpperCase()
+            );
+        }
+        else if ((flightData.destinationCity.toUpperCase() !== "" && flightData.originCity.toUpperCase() !== "") && despartureDate !== null) {
+            filterData = selectedData.filter((value) => value.destination.toUpperCase() === flightData.destinationCity.toUpperCase()
+                && value.source.toUpperCase() === flightData.originCity.toUpperCase() && value.departs_at === despartureDate
+            );
+        }
+        else if ((flightData.destinationCity.toUpperCase() !== "" && flightData.originCity.toUpperCase() !== "") && passengers !== "") {
+            filterData = selectedData.filter((value) => value.destination.toUpperCase() === flightData.destinationCity.toUpperCase()
+                && value.source.toUpperCase() === flightData.originCity.toUpperCase() && value.passengers === passengers
+            );
+        }
+        else if(despartureDate !== null && passengers !== ""){
+            filterData = selectedData.filter((value) => value.departs_at === despartureDate && value.passengers === passengers
+            );
+        }  
+        else if (flightData.originCity.toUpperCase() !== "") {
+            filterData = selectedData.filter((value) => value.source.toUpperCase() === flightData.originCity.toUpperCase());
+        }
+        else if (flightData.destinationCity.toUpperCase() !== "") {
+            filterData = selectedData.filter((value) => value.destination.toUpperCase() === flightData.destinationCity.toUpperCase());
+        }
+        else if (despartureDate !== null) {
+            filterData = selectedData.filter((value) => value.departs_at === despartureDate);
+        }
+        else if (passengers !== "" ) {
+            filterData = selectedData.filter((value) => value.passengers === passengers);
+        }
+
+        return flightData.searchFilter(event, filterData)
     }
 
     return (
@@ -65,45 +109,35 @@ function SearchFilterPage(props) {
             <Typography variant="h6" color="inherit">
                 One way
             </Typography>
-            <form className={classes.root} noValidate autoComplete="off">
-                <TextField id="standard-basic" label="Enter Origin City" onChange={originCityChange} value={originCity} />
-                <TextField id="standard-basic" label="Enter Destination City" onChange={destinationCityChange} value={destinationCity}/>
+            <form className={classes.root} validate autoComplete="on">
+                <TextField id="standard-basic"  label="Enter Origin City" onChange={(event) => flightData.onChangeSource(event)} value={flightData.originCity} />
+                <TextField id="standard-basic" label="Enter Destination City" onChange={(event) => flightData.onChangeDestination(event)} value={flightData.destinationCity} disabled={!flightData.originCity.toUpperCase()} />
                 <TextField
                     id="datetime-local"
-                    label="departure Date"
+                    label="Departure Date"
                     type="datetime-local"
-                    defaultValue="2017-05-24T10:30"
+                    // defaultValue="2017-05-24T10:30"
                     className={classes.textField}
                     InputLabelProps={{
                         shrink: true,
                     }}
+                    onChange={(event) => onDepartureDateChnage(event)}
                 />
-                <TextField
-                    id="datetime-local"
-                    label="Return Date"
-                    type="datetime-local"
-                    defaultValue="2017-05-24T10:30"
-                    className={classes.textField}
-                    InputLabelProps={{
-                        shrink: true,
-                    }}
-                />
-                <TextField
-                    id="standard-select-currency"
-                    select
-                    label="Passengers"
-                // value={currency}
-                // onChange={handleChange}
 
+                <InputLabel id="demo-simple-select-label">Passengers</InputLabel>
+                <Select
+                    labelId="demo-simple-select-label"
+                    id="demo-simple-select"
+                    value={passengers}
+                    onChange={onPassengersChange}
                 >
-                    {passengers.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                            {option.label}
-                        </MenuItem>
+                    {passengersValues.map((option) => (
+                        <MenuItem value={option.value}>{option.label}</MenuItem>
                     ))}
-                </TextField>
 
-                <Button variant="contained" color="primary" onClick={(event) => props.searchFilter(event, selectedData)}>
+                </Select>
+
+                <Button variant="contained" color="primary" onClick={onClickSearch} disabled={!(despartureDate!==null || passengers!==""||(flightData.destinationCity.toUpperCase() !== "" && flightData.originCity.toUpperCase() !== ""))}>
                     Search
                 </Button>
             </form>
@@ -113,18 +147,25 @@ function SearchFilterPage(props) {
                     Refine Flight Search
                 </Typography>
                 <Slider
-                    value={value}
-                    onChange={handleChange}
+                    value={flightData.sliderValue}
+                    onChange={flightData.onSliderChange}
                     aria-labelledby="range-slider"
-                    getAriaValueText={valuetext}
+                    getAriaValueText={flightData.valuetext}
                     valueLabelDisplay="on"
                     defaultValue={0}
                     min={0}
-                    max={100000}
+                    max={20000}
                 />
             </div>
         </div>
     )
 }
 
-export default SearchFilterPage
+SearchFilterPage.propTypes = {
+    flightData: PropTypes.shape({
+        flights: PropTypes.array.isRequired,
+
+    }).isRequired,
+};
+
+export default SearchFilterPage;
